@@ -7,7 +7,7 @@
 # usage: sysroot.sh dir
 set -e
 TOP=$(cd "$(dirname "$0")" && pwd)
-. "$TOP/scripts/nfront-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
+. "$TOP/scripts/9space-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
 PLAN9=${PLAN9:-$(cd "$TREE" && pwd)}
 objtype=${objtype:-amd64}
 OUT=${1:?usage: sysroot.sh dir}

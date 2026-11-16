@@ -7,7 +7,7 @@
 # program: "name ok" or "name FAIL ...". Needs the 9front tree built.
 set -e
 TOP=$(cd "$(dirname "$0")/.." && pwd)
-. "$TOP/scripts/nfront-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
+. "$TOP/scripts/9space-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
 export objtype=${objtype:-amd64}
 # riscv64: the branch with the port, beside the tree
 [ -n "$PLAN9" ] || [ $objtype != riscv64 ] || [ ! -d "$TREE_RISCV" ] || PLAN9=$TREE_RISCV

@@ -14,7 +14,7 @@
 #        ../9front; for riscv64 ../9front-riscv, the branch with the port)
 set -e
 TOP=$(cd "$(dirname "$0")" && pwd)
-. "$TOP/scripts/nfront-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
+. "$TOP/scripts/9space-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
 export objtype=${objtype:-amd64}
 case $objtype in
 amd64)	TARGET=x86_64-pc-plan9 ARCHCONF=() ;;
