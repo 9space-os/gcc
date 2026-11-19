@@ -26,11 +26,12 @@ $X-g++ -O2 -o "$O/cxx" "$TOP/tests/cxx.cc"
 $X-g++ -O2 -o "$O/eh" "$TOP/tests/eh.cc"
 # c99math: fenv needs -frounding-math (gcc's FENV_ACCESS)
 $X-gcc -O2 -frounding-math -o "$O/c99math" "$TOP/tests/c99math.c"
-for p in c99stdio c99time c99wchar pthread; do
+for p in c99stdio c99time c99wchar pthread stdiothreads; do
 	$X-gcc -O2 -o "$O/$p" "$TOP/tests/$p.c"
 done
 $X-g++ -O2 -o "$O/cxxlib" "$TOP/tests/cxxlib.cc"
-tests="ape plan9 cxx eh c99math c99stdio c99time c99wchar pthread cxxlib"
+$X-g++ -O2 -o "$O/cxxthreads" "$TOP/tests/cxxthreads.cc"
+tests="ape plan9 cxx eh c99math c99stdio c99time c99wchar pthread stdiothreads cxxlib cxxthreads"
 cmds=()
 for p in $tests; do
 	cmds+=("/tests/$p; if(~ \$status '') echo $p ok; if not echo $p FAIL \$status")

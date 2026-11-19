@@ -291,9 +291,13 @@ Goal: libstdc++ with everything it finds beyond C99/POSIX. Decision: everything 
   `c99stdio.c`, `c99time.c`, `c99wchar.c`, `pthread.c`, `cxxlib.cc` (in `cross.sh`; `cxxlib` also
   native). Test traps: gcc folds `rint(-x)` to `-rint(x)`; on 386 gcc inlines `sqrtf` as
   `fsqrt` with excess precision; glibc's „C“ locale is not UTF-8 (host test: `C.UTF-8`).
-- Open: APE's stdio has no locks (threads sharing a FILE must coordinate;
-  `std::cout` from several threads); `_exit`/abort do not end other threads; no locales
-  other than „C“; `<uchar.h>` is missing.
+- APE's stdio locks each FILE once a second thread runs, and `_exit`/abort end the other
+  threads (tree, 2026-11-19: `stdio/flockfile.c`; the locks sit in a table beside the FILEs,
+  not in them: `sizeof(FILE)` is APE's ABI, `stdout` is `&_IO_stream[1]` in code compiled
+  before). `tests/stdiothreads.c`, `tests/cxxthreads.cc`. Open: the target libraries built
+  before that (libstdc++.a here) keep the old `getc`/`putc` macros, without the lock, until
+  they are built again (`std::cout`'s whole insertions go through `fwrite`, which locks);
+  no locales other than „C“. (`<uchar.h>` is there: tree 5265aca8a.)
 
 ## riscv64: riscv64-unknown-plan9 (branch riscv, tree `../9front-riscv`)
 
