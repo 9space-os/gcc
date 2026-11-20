@@ -1,8 +1,9 @@
 #!/bin/bash
-# The sysroot of the target x86_64-pc-plan9: a view of the gcc-built 9front
-# tree ($PLAN9, default ../9front) as it is on an installed system --
-# /amd64/include, /sys/include, /amd64/lib.gcc (libap.a, libc.a, ...),
-# /amd64/plan9.ld. Needs the tree built (CC=gcc ARCH=amd64 build.exe).
+# The sysroot of the target for $objtype (default amd64: x86_64-pc-plan9): a
+# view of the gcc-built 9front tree ($PLAN9, default TREE of paths.env, tree)
+# as it is on an installed system -- /$objtype/include, /sys/include,
+# /$objtype/lib.gcc (libap.a, libc.a, ...), /$objtype/plan9.ld. Needs the tree
+# built (CC=gcc ARCH=$objtype build.exe).
 #
 # usage: sysroot.sh dir
 set -e

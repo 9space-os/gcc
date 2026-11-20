@@ -1,6 +1,6 @@
 #!/bin/bash
-# gccmk (plan9/, build.sh plan9) in the 9front guest (../9front's
-# scripts/guest/boot-cli.sh): 9front's own mkfiles with the native gcc --
+# gccmk (plan9/, build.sh plan9) in the 9front guest (the tree's
+# scripts/guest/boot-cli.sh, PLAN9, default TREE of paths.env): 9front's own mkfiles with the native gcc --
 # a library (libbio: mksyslib, ar; its members replace the build's x.o),
 # a program with yacc (hoc: mkone) and an APE program (ape/cmd/expr:
 # pcc), each run, and the assembly of libc, libmp and libsec (gcc-as: the

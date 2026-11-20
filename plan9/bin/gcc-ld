@@ -10,7 +10,7 @@ while(! ~ $#* 0){
 		out=$2
 		shift
 	case -[HTRE]
-		shift	# 6l's header type, text and data addresses, entry
+		shift	# 6l's header type, text address, rounding, entry
 	case -*
 		;
 	case *

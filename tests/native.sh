@@ -1,6 +1,6 @@
 #!/bin/bash
 # The native toolchain (out/$objtype, /$objtype/gnu) in the 9front guest
-# (../9front's scripts/guest/boot-cli.sh): compile and run tests/ape.c
+# (the tree's scripts/guest/boot-cli.sh, PLAN9, default TREE of paths.env): compile and run tests/ape.c
 # (APE, the driver's defaults), tests/plan9.c (native Plan 9 C), and with
 # g++ tests/cxx.cc, tests/eh.cc and tests/cxxlib.cc (libstdc++,
 # exceptions, threads over APE's pthreads), and compare the

@@ -9,9 +9,9 @@
 #
 # objtype=amd64 (default): x86_64-pc-plan9; objtype=386: i686-pc-plan9;
 # objtype=riscv64: riscv64-unknown-plan9; objtype=arm64: aarch64-pc-plan9.
-# usage: [objtype=386] build.sh stage...    (BUILD: build directory, default
+# usage: [objtype=386|riscv64|arm64] build.sh stage...    (BUILD: build directory, default
 #        build; OUTDIR: where native and plan9 go, default out; PLAN9: the 9front tree, default
-#        ../9front; for riscv64 ../9front-riscv, the branch with the port)
+#        TREE of paths.env (tree); for riscv64 TREE_RISCV (tree-riscv), the branch with the port)
 set -e
 TOP=$(cd "$(dirname "$0")" && pwd)
 . "$TOP/scripts/9space-paths.sh"	# TREE, TREE_GCC, GCC_DIR, ... (the distribution's paths.env)
