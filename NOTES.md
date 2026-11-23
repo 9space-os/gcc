@@ -421,3 +421,29 @@ several threads (Rust's std tests with 12 test threads) aborted phase 2 (`abort`
 program hung. `gcc/config/plan9.h`: `GTHREAD_USE_WEAK 0` like darwin.h and cygwin.h; APE's
 pthreads are a fixed part of libap, their mutexes work for every proc (`pthread_self` knows
 std's procs). libstdc++ (`config/os/generic`) already had `_GLIBCXX_GTHREAD_USE_WEAK 0`.
+
+## 2026-11-22: gccmk's mkfile sets APEGNU
+
+`build.sh plan9` writes `APEGNU=-D_APE_GNU` into gccmk's `/$objtype/mkfile`.
+The tree's mkfiles of gcc-only APE parts take the flag from it
+(`ape/lib/devdraw`), and the parent mkfiles skip their gcc-only
+directories (`GCCONLY`) when it is empty, as it is under kencc's mk. The
+tree's own build sets it too (`scripts/gen/gencmds.py`). `scripts/guest/build-kencc.sh gcc` in the
+tree runs all of 9front's mkfiles with gccmk in a guest (`dist/bin/check -native`).
+
+gccmk's `pcc` took `-c` only as a word of its own; `ape/lib/auth`'s mkfile
+compiles with `pcc -TVwc`, which it then linked. It now finds `c` among
+clustered flags too (not in an argument of `-D`, `-I`, `-U`).
+
+Found by running all of 9front's mkfiles with gccmk on an installed 9space
+(2026-11-23), each now as kencc does it:
+
+- The caller's `-I` comes before gcc-cc's and pcc's own include directories
+  (antiword builds with `-I/sys/include/ape`: gcc found the native stdio.h).
+- gccmk's `bin` has `6c`, `6l` and `6a` (by `$O`), which run gcc-cc, gcc-ld
+  and gcc-as: mkfiles that build their tools with `$cputype^c` (cmd/jpg)
+  linked kencc objects against gcc's libraries.
+- `#pragma lib` names libraries gcc does not take: where 9front's mkfiles
+  relied on it for a library outside the ones gccmk links anyway (`libs`,
+  `apelibs`), the tree's mkfiles now name it (scat: libmap; audio: libvorbis,
+  libogg, libFLAC; tcpostio, spin, antiword: linked by pcc, APE's libraries).

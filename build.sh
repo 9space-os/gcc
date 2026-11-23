@@ -179,8 +179,15 @@ plan9(){
 	mkdir -p "$d/bin" "$OUT/$objtype/gnu/bin"
 	cp "$TOP"/plan9/lib.rc "$d/"
 	cp "$TOP"/plan9/bin/* "$d/bin/"
+	# kencc's names too (mkfiles that build their tools with $cputype^c, cmd/jpg):
+	# in gccmk's namespace they are gcc
+	for t in c:gcc-cc l:gcc-ld a:gcc-as; do
+		printf '#!/bin/rc\n# gccmk: %s is %s\nexec %s $*\n' "$O${t%%:*}" "${t#*:}" "${t#*:}" > "$d/bin/$O${t%%:*}"
+		chmod +x "$d/bin/$O${t%%:*}"
+	done
 	cp "$TOP"/plan9/gccmk "$OUT/$objtype/gnu/bin/"
-	printf '</sys/src/mkfile.proto\n\nCC=gcc-cc\nLD=gcc-ld\nO=%s\nAS=gcc-as\n' $O > "$d/mkfile"
+	# APEGNU: gcc-only APE parts of the tree (ape/lib/devdraw's mkfile) take -D_APE_GNU from it; under kencc it is empty
+	printf '</sys/src/mkfile.proto\n\nCC=gcc-cc\nLD=gcc-ld\nO=%s\nAS=gcc-as\nAPEGNU=-D_APE_GNU\n' $O > "$d/mkfile"
 	python3 - "$PLAN9" "$objtype" "$d" <<'PY'
 import json, os, sys
 root, objtype, d = sys.argv[1:]

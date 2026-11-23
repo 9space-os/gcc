@@ -4,9 +4,15 @@
 # for APE programs, as the build tool builds them; for gccmk
 . /$objtype/gnu/plan9/lib.rc
 compileonly=0
+# -c alone or among other letters (ape/lib/auth: pcc -TVwc); not in an
+# option's argument (-DX=c, -I/sys/src/libc)
 for(a)
-	if(~ $a -c)
+	switch($a){
+	case -D* -I* -U*
+		;
+	case -*c*
 		compileonly=1
+	}
 ccargs $*
 ~ $#files 0 && die no files
 objs=()
@@ -20,7 +26,8 @@ for(f in $files){
 		}
 		if not if(! ~ $#out 0)
 			o=$out
-		$GNU/gcc -c -I/$objtype/include/ape -I/sys/include/ape -I. $cflags $apeflags $defs \
+		# the caller's -I before the default directories, as kencc searches
+		$GNU/gcc -c $defs -I/$objtype/include/ape -I/sys/include/ape -I. $cflags $apeflags \
 			-o $o $f || exit $prog
 		objs=($objs $o)
 	case *

@@ -8,6 +8,7 @@ ccargs $*
 for(f in $files){
 	o=$out
 	~ $#o 0 && o=`{basename $f .c}^.$O
-	$GNU/gcc -c -I/$objtype/include -I/sys/include -I. $cflags $defs -o $o $f || exit $prog
+	# the caller's -I before the default directories, as kencc searches
+	$GNU/gcc -c $defs -I/$objtype/include -I/sys/include -I. $cflags -o $o $f || exit $prog
 }
 exit ''
