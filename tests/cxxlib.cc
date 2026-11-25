@@ -70,8 +70,10 @@ main()
 		std::isnan(std::nan("")) && std::hypot(3.0, 4.0, 12.0) == 13.0 &&
 		std::fabs(std::tgamma(5.0L) - 24.0L) < 1e-15L);
 	std::complex<double> z = std::exp(std::complex<double>(0, M_PI));
-	check("complex", std::abs(z + 1.0) < 1e-15 && std::sqrt(std::complex<double>(-4)) ==
-		std::complex<double>(0, 2));
+	// sqrt(-4) within an ulp of 2i: libstdc++ gives (0, 2) exactly, libc++ (clang,
+	// toolchain/clang) goes by polar() and gives (1.2e-16, 2)
+	check("complex", std::abs(z + 1.0) < 1e-15 &&
+		std::abs(std::sqrt(std::complex<double>(-4)) - std::complex<double>(0, 2)) < 1e-15);
 
 	// <format>
 	check("format", std::format("{:>6.2f}|{:#x}|{}", 3.14159, 255, "s") == "  3.14|0xff|s");
