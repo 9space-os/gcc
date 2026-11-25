@@ -1,7 +1,9 @@
 # Shared by the mk wrappers (gcc-cc, gcc-as, gcc-ld, pcc, ar): the native
 # gcc and binutils with the flags of the 9front tree's build (build.sh
 # plan9 writes them from $PLAN9/$objtype/*.json into this directory, one
-# argument per line: cflags, apeflags, asflags, ldflags, libs, apelibs).
+# argument per line: cflags, apeflags, asflags, ldflags, libs, apelibs;
+# a kernel's from its manifest, sys/src/9/*/build.json, into kernel/$CONF:
+# cflags, asflags, ldflags, libs).
 G=/$objtype/gnu
 P=$G/plan9
 GNU=$G/bin
@@ -32,18 +34,46 @@ ifs=$nl {
 	libs=`{cat $P/libs}
 	apelibs=`{cat $P/apelibs}
 }
+# a kernel's mkfile (sys/src/9/*: CONF, which mk passes to the recipes)
+# whose configuration the tree's build makes: its objects are compiled
+# with the kernel's flags (-mcmodel=kernel, no red zone, no SSE), as the
+# build tool compiles them; $kernel is the configuration, else empty
+kernel=()
+if(! ~ $#CONF 0 && test -d $P/kernel/$CONF){
+	kernel=$CONF
+	ifs=$nl {
+		kcflags=`{cat $P/kernel/$CONF/cflags}
+		kasflags=`{cat $P/kernel/$CONF/asflags}
+		kldflags=`{cat $P/kernel/$CONF/ldflags}
+		klibs=`{cat $P/kernel/$CONF/libs}
+	}
+}
+# kuser file: in a kernel's directory, file is part of a user program
+# the kernel carries (boot(8), initcode and its init9) and has the user
+# programs' flags; kencc compiles both alike
+fn kuser{
+	switch($1){
+	case */boot/*.c *initcode.c init9.c init9.s */init9.c */init9.s
+		status=''
+	case *
+		status=no
+	}
+}
+# the first line of what gccmk's aux/data2s writes: GAS, not 6a
+data2s='/*gccmk:data2s*/'
 TMP=/tmp/gcc.$prog.$pid
 fn sigexit{
 	rm -rf $TMP
 }
 
 # ccargs args...: kencc's (6c, pcc) arguments sorted into $out (-o),
-# $defs (-D, -I, -U) and $files; the other options (-FTVw, -N, ...) are
+# $defs (-D, -I, -U), $files and $nodot (-.); the other options (-FTVw, -N, ...) are
 # kencc's own and mean nothing to gcc
 fn ccargs{
 	out=()
 	defs=()
 	files=()
+	nodot=0
 	while(! ~ $#* 0){
 		switch($1){
 		case -o
@@ -54,6 +84,9 @@ fn ccargs{
 			shift
 		case -D* -I* -U*
 			defs=($defs $1)
+		case -.
+			# kencc: not the source's directory for "" includes
+			nodot=1
 		case -a* -S
 			die $1: not with gcc
 		case -*

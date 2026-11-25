@@ -170,7 +170,8 @@ native(){
 # gccmk and its wrappers (plan9/) into /$objtype/gnu: mk on 9front with
 # the native gcc, with the flags of the tree's build ($PLAN9/$objtype/
 # cflags.json, gcc.json, ape.json; the libraries a program manifest
-# links), one argument per line for the wrappers' lib.rc
+# links; each kernel's manifest, sys/src/9/*/build.json), one argument
+# per line for the wrappers' lib.rc
 plan9(){
 	local d=$OUT/$objtype/gnu/plan9 O
 	case $objtype in amd64) O=6 ;; 386) O=8 ;; riscv64) O=j ;; arm64) O=7 ;; esac
@@ -179,6 +180,7 @@ plan9(){
 	mkdir -p "$d/bin" "$OUT/$objtype/gnu/bin"
 	cp "$TOP"/plan9/lib.rc "$d/"
 	cp "$TOP"/plan9/bin/* "$d/bin/"
+	cp -r "$TOP"/plan9/aux "$d/"
 	# kencc's names too (mkfiles that build their tools with $cputype^c, cmd/jpg):
 	# in gccmk's namespace they are gcc
 	for t in c:gcc-cc l:gcc-ld a:gcc-as; do
@@ -212,9 +214,32 @@ lists = {
 	'libs': libs('sys/src/cmd/cmds.json') + flags('cflags.json', 'Libs'),
 	'apelibs': libs('sys/src/ape/cmd/cmds.json') + flags('cflags.json', 'Libs'),
 }
-for name, words in lists.items():
-	with open(os.path.join(d, name), 'w') as f:
-		f.write(''.join(w + '\n' for w in words))
+def write(dir, lists):
+	os.makedirs(dir, exist_ok=True)
+	for name, words in lists.items():
+		with open(os.path.join(dir, name), 'w') as f:
+			f.write(''.join(w + '\n' for w in words))
+write(d, lists)
+# the kernels of this machine (their manifests sys/src/9/*/build.json),
+# for gccmk in a kernel's directory (lib.rc: kernel/$CONF): the build
+# tool's C flags for a kernel (-std=c11 and the manifest's), the
+# assembler's subset of them, the link's Oflags and Libs (klib*.a)
+k9 = os.path.join(root, 'sys/src/9')
+for kd in sorted(os.listdir(k9)):
+	m = os.path.join(k9, kd, 'build.json')
+	if not os.path.isfile(m):
+		continue
+	for e in json.load(open(m)):
+		if 'Kernel' not in e or not e.get('Install', '').startswith('/' + objtype + '/'):
+			continue
+		conf = os.path.basename(e['Kernel']['ConfFile'])
+		kc = ['-std=c11'] + [f.replace('/$ARCH', '/' + objtype) for f in e.get('Cflags', [])]
+		write(os.path.join(d, 'kernel', conf), {
+			'cflags': kc,
+			'asflags': [f for f in kc if f.startswith(('-m', '-fzero', '-fcommon')) or f == '-fno-pie'],
+			'ldflags': e.get('Oflags', []),
+			'libs': [f.replace('/$ARCH', '/' + objtype) for f in e.get('Libs', [])],
+		})
 PY
 }
 

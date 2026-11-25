@@ -1,6 +1,7 @@
 #!/bin/rc
 # gcc-cc: 6c (8c) for mk -- each x.c to x.$O (or -o) with the native gcc
-# and the tree's flags, as the build tool compiles; for gccmk
+# and the tree's flags, as the build tool compiles; in a kernel's
+# directory with the kernel's flags (lib.rc: $kernel); for gccmk
 . /$objtype/gnu/plan9/lib.rc
 ccargs $*
 ~ $#files 0 && die no files
@@ -8,7 +9,22 @@ ccargs $*
 for(f in $files){
 	o=$out
 	~ $#o 0 && o=`{basename $f .c}^.$O
+	flags=$cflags
+	if(! ~ $#kernel 0 && ! kuser $f)
+		flags=$kcflags
+	src=$f
+	if(~ $nodot 1 && ! ~ $f `{basename $f}){
+		# -. (the kernel's ../pc/x.c): "" includes from here, not from
+		# the source's directory (gcc always looks there first) -- the
+		# source compiled as a copy in this directory, as the build
+		# tool's manifests copy it (cp ../pc/x.c x.c)
+		src=.gccmk.`{basename $f}
+		cp $f $src || die cp $f
+	}
 	# the caller's -I before the default directories, as kencc searches
-	$GNU/gcc -c $defs -I/$objtype/include -I/sys/include -I. $cflags -o $o $f || exit $prog
+	$GNU/gcc -c $defs -I/$objtype/include -I/sys/include -I. $flags -o $o $src
+	st=$status
+	~ $src $f || rm -f $src
+	~ $st '' || exit $prog
 }
 exit ''

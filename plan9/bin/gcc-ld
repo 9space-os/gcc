@@ -1,16 +1,42 @@
 #!/bin/rc
 # gcc-ld: 6l (8l) for mk -- the objects and local archives to $O.out (or
-# -o) with every library of /$objtype/lib.gcc; for gccmk
+# -o) with every library of /$objtype/lib.gcc; for gccmk. 6l's -l (no
+# libraries of its own) is one of a kernel's links (lib.rc: $kernel):
+#	-l	the kernel, as the build tool links it: the kernel's
+#		flags (kernel.ld) and libraries (klib*.a), then the a.out
+#		the loaders boot (build -elf2aout)
+#	-l -s	a raw image: initcode.out (at UTZERO after the header's
+#		room), rebootcode and apbootstrap (at -T); 6l's header
+#		becomes as many zero bytes (-H3 -H6: none), which the
+#		mkfile skips (dd -iseek) or proc0 does (initcode)
 . /$objtype/gnu/plan9/lib.rc
 out=$O.out
 objs=()
+nolibs=0
+strip=0
+text=()
+hdr=()
 while(! ~ $#* 0){
 	switch($1){
 	case -o
 		out=$2
 		shift
-	case -[HTRE]
-		shift	# 6l's header type, text address, rounding, entry
+	case -T
+		text=$2
+		shift
+	case -T*
+		text=`{echo $1 | sed 's/^-T//'}
+	case -H
+		hdr=$2
+		shift
+	case -H*
+		hdr=`{echo $1 | sed 's/^-H//'}
+	case -[RE]
+		shift	# rounding, entry
+	case -l
+		nolibs=1
+	case -s
+		strip=1
 	case -*
 		;
 	case *
@@ -18,6 +44,90 @@ while(! ~ $#* 0){
 	}
 	shift
 }
-linklibs=$libs
-link $out $objs
+
+# klib lib.a: the kernel's version of library lib.a (/$objtype/lib.gcc/
+# klibX.a), made by the build tool from the library's klib.json (the
+# same sources with the kernel's flags) when it is missing or older
+fn klib{
+	kl=$1
+	kn=`{basename $kl .a | sed 's/^k//'}
+	kj=$PLAN9/sys/src/$kn/klib.json
+	if(! test -e $kl || test /$objtype/lib.gcc/$kn.a -nt $kl){
+		test -r $kj || die $kl: no $kj
+		# GNU's tools, not the mkfile's (mk passes CC=gcc-cc, ...)
+		CC=$GNU/gcc LD=$GNU/ld AR=$GNU/ar RANLIB=$GNU/ranlib STRIP=$GNU/strip \
+			NM=$GNU/nm OBJCOPY=$GNU/objcopy build $kj || die build $kj
+	}
+}
+
+if(~ $nolibs 0){
+	linklibs=$libs
+	link $out $objs
+	exit ''
+}
+
+if(~ $strip 0){
+	~ $#kernel 0 && die -l: not in a kernel directory with gccmk flags (CONF)
+	kobjs=()
+	for(f in $objs){
+		switch($f){
+		case *.a *.a$O
+			;	# the mkfile's libraries: the kernel's are its manifest's
+		case *
+			kobjs=($kobjs $f)
+		}
+	}
+	for(l in $klibs)
+		if(~ $l */klib*.a)
+			klib $l
+	linklibs=$klibs
+	ldflags=$kldflags
+	mkdir -p $TMP
+	link $TMP/kernel.elf $kobjs
+	build -elf2aout $TMP/kernel.elf $out || die elf2aout $out
+	exit ''
+}
+
+# a raw image; 6l's a.out header: 32 bytes, 40 with 64-bit addresses;
+# initcode's text follows it at UTZERO (the kernels' mem.h)
+switch($objtype){
+case amd64
+	ahdr=40
+	inittext=0x200028
+case arm64
+	ahdr=40
+	inittext=0x10028
+case 386
+	ahdr=32
+	inittext=0x1020
+case *
+	die -l -s: objtype $objtype not done
+}
+switch($hdr){
+case 3 6
+	ahdr=0
+	inittext=()
+}
+if(~ $#text 0){
+	~ $#inittext 0 && die -l -s -H$hdr: no -T
+	text=$inittext
+}
+mkdir -p $TMP
+lobjs=()
+larch=()
+for(f in $objs){
+	switch($f){
+	case *.a *.a$O
+		larch=($larch $f)
+	case *
+		lobjs=($lobjs $f)
+	}
+}
+$GNU/ld -N -static -Ttext'='$text --entry'='$text --no-warn-rwx-segments -z noexecstack -o $TMP/raw.elf $lobjs \
+	--start-group $larch --end-group `{$GNU/gcc -print-libgcc-file-name} || die ld $out
+$GNU/objcopy -O binary -R .bss -R .comment -R .note.gnu.property $TMP/raw.elf $TMP/raw.bin || die objcopy $out
+{
+	~ $ahdr 0 || dd -if /dev/zero -bs $ahdr -count 1 -quiet 1
+	cat $TMP/raw.bin
+} >$out
 exit ''

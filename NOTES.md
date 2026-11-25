@@ -447,3 +447,53 @@ Found by running all of 9front's mkfiles with gccmk on an installed 9space
   relied on it for a library outside the ones gccmk links anyway (`libs`,
   `apelibs`), the tree's mkfiles now name it (scat: libmap; audio: libvorbis,
   libogg, libFLAC; tcpostio, spin, antiword: linked by pcc, APE's libraries).
+
+## 2026-11-25: gccmk builds a kernel
+
+Goal: `cd /sys/src/9/pc64 && gccmk install` builds what `mk install` builds
+under kencc, with the tree build's flags. The 9front mkfiles stay as they are;
+the wrappers tell the kernel's parts apart:
+
+- `build.sh plan9` writes `plan9/kernel/$CONF/{cflags,asflags,ldflags,libs}`
+  from each kernel manifest of the machine (`sys/src/9/*/build.json`, `Install`
+  under `/$objtype/`): `-std=c11` plus its Cflags (as the build tool's
+  `compileArgs`), the assembler's subset, Oflags (`-T kernel.ld`) and Libs
+  (`klib*.a`, 386 and arm64 also `libgcc.a`).
+- `lib.rc`: kernel mode when mk passes a `CONF` that has such a directory.
+  `kuser` keeps the user flags for the user programs a kernel carries:
+  `../boot/*.c`, `initcode.c`, `init9`.
+- `gcc-cc`: `-.` (`../pc/x.c` from pc64's mkfile) compiles a copy in the
+  current directory, so `""` includes come from there, as kencc's `-.` does
+  and as the manifest's `cp ../pc/x.c x.c` does. gcc always searches the
+  source's own directory first.
+- `gcc-ld`:
+  - `-l` without `-s` is the kernel: link with the manifest's klibs and
+    ldflags; the mkfile's `/$objtype/lib/lib*.a` are dropped. A `klibX.a`
+    missing or older than `libX.a` is made by `build $PLAN9/sys/src/libX/klib.json`.
+    Then `build -elf2aout`, so the kernel is the a.out 9boot loads.
+  - `-l -s` is a raw image (`ld -N -Ttext`, `objcopy -O binary`), behind as
+    many zero bytes as 6l's a.out header had (40 amd64/arm64, 32 386; `-H3`/`-H6`
+    none). Without `-T`, initcode at UTZERO plus the header. On Linux with the
+    cross binutils, rebootcode and apbootstrap made this way are byte-identical
+    to the build's `rebootcode.i` and `apbootstrap.i`; initcode links to 1242 bytes,
+    `_main` at 0x200028.
+- `aux/data2s` (`plan9/aux`, bound before `/bin/aux` by gccmk; one in `bin`
+  would hide `/bin/aux`): `port/mkrootall`'s data in GAS (`.byte`, `namelen` a
+  `.long`, since ulong is 32 bits). Its first line `/*gccmk:data2s*/` tells
+  `gcc-as` to assemble the `.s` itself. Round trip checked on Linux.
+- `strip`: GNU strip (mkrootall strips the ELF programs it puts into the kernel).
+- gccmk sets `PLAN9=/` (unless set), `CC=gcc`, `ARCH=$objtype` for the build tool.
+
+Tried on 9space (amd64, pc64): `gccmk 9pc64` in a copy of `/sys/src/9` builds
+in about 2 minutes (the 10 MB bootfs through data2s's awk takes most of it), and
+the kernel boots in QEMU to the MCP server (4 processors, disk, network, user
+programs). It needed two fixes in the tree's `pc64/mkfile`, still to land there:
+- `init9.$O` from `init9.S` under gcc (`APEGNU`). `../pc/init9.c` expects 6c's
+  argv0 on the stack, so the gcc-compiled one handed the first system call a
+  garbage pointer: `boot process died: sys: bad address in syscall pc=0x20022a`.
+- `acpisleep.$O: apbootstrap.i`.
+
+Also open in the tree: pc64's conf lacks `acpisleep` and `cstate` (the
+hand-made `build.json` has them), and `acpisleep.c` needs its own name for
+apbootstrap (mk's `%.i` is not static). Next: libc's 9syscall stubs (tree side),
+and comparing the objects and symbols with the build's 9pc64.

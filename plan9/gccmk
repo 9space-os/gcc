@@ -4,7 +4,8 @@
 # names the wrappers (gcc-cc, gcc-as, gcc-ld; pcc and ar in front of
 # /bin), and /$objtype/lib is /$objtype/lib.gcc, the libraries gcc built.
 # The flags are the tree's build's (sys/src/cmd/build, $objtype/*.json);
-# 9front's .s files need their GAS port .S beside them.
+# 9front's .s files need their GAS port .S beside them. In a kernel's
+# directory the wrappers take the kernel's flags and libraries (lib.rc).
 rfork ne
 P=/$objtype/gnu/plan9
 test -r $P/mkfile || { echo gccmk: no $P/mkfile >[1=2]; exit nomkfile }
@@ -13,6 +14,14 @@ fn fail{
 	exit $1
 }
 bind $P/mkfile /$objtype/mkfile || fail bind mkfile
+# aux/data2s before the 9front aux programs (its own directory: one in
+# $P/bin would hide /bin/aux)
+bind -b $P/aux /bin/aux || fail bind aux
 bind -b $P/bin /bin || fail bind bin
 bind -c /$objtype/lib.gcc /$objtype/lib || fail bind lib
+# a kernel's link makes its klib*.a and the a.out with the build tool
+# (gcc-ld): the tree is / unless PLAN9 says otherwise
+~ $#PLAN9 0 && PLAN9=/
+CC=gcc
+ARCH=$objtype
 exec mk $*

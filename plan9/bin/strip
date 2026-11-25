@@ -1,0 +1,5 @@
+#!/bin/rc
+# strip: 9front's strip for mk with GNU strip (the programs gcc links
+# are ELF; port/mkrootall strips those it puts into a kernel); for gccmk
+. /$objtype/gnu/plan9/lib.rc
+exec $GNU/strip $*

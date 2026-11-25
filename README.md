@@ -46,7 +46,7 @@ are `build/$objtype`. Needs the 9front tree built for that architecture
 
 ## Using it on 9front
 
-    bind -b /amd64/gnu/bin /bin
+    bind -a /amd64/gnu/bin /bin                # after /bin: GNU's cpp, size, strip would hide Plan 9's
     gcc -o hello hello.c                       # POSIX over APE: -D_POSIX_SOURCE, -lbsd -lap
     gcc -nostdinc -I/amd64/include -I/sys/include -fplan9-extensions -fno-builtin -c prog.c
     gcc -nostdlib -o prog prog.o -L/amd64/lib.gcc -lc -lgcc     # native Plan 9 C
@@ -74,7 +74,7 @@ libraries.
 
 ## mk with gcc: gccmk
 
-    bind -b /amd64/gnu/bin /bin
+    bind -a /amd64/gnu/bin /bin
     cd /sys/src/cmd/hoc && gccmk install        # 9front's mkfile, gcc instead of 6c/6a/6l
 
 `gccmk` runs mk in a namespace where `/$objtype/mkfile` names the wrappers
@@ -86,6 +86,19 @@ with every library of `/$objtype/lib.gcc` (gcc ignores `#pragma lib`); `ar`
 names the members `x.o` like the build tool, so `gccmk install` in a library
 replaces the build's objects.
 
-Not with gccmk: the kernel and libc as a whole (libc's `9syscall` writes 6a
-assembly). `x.s` assembles through its GAS port `x.S` beside it (libc, libmp,
-libsec, lib387 have them).
+`x.s` assembles through its GAS port `x.S` beside it (libc, libmp, libsec,
+lib387 have them).
+
+In a kernel's directory (`cd /sys/src/9/pc64 && gccmk install`; the mkfile's
+`CONF`) the wrappers take that kernel's flags and libraries from its manifest
+(`sys/src/9/*/build.json`, written by `build.sh plan9` into
+`/$objtype/gnu/plan9/kernel/$CONF`), except for the user programs the kernel
+carries (boot, initcode, init9). `gcc-ld -l` links the kernel as the build tool
+does: `kernel.ld`, the `klib*.a` (the build tool makes them from the libraries'
+`klib.json` when they are missing or older than the library), then the a.out
+(`build -elf2aout`); `-l -s` makes the raw images (initcode, rebootcode,
+apbootstrap). gccmk's `aux/data2s` writes the kernel's `$CONF.root.s` in GAS.
+The kernel needs the build tool (`build`) in the path. 9boot reads only 8.3
+names from 9fat: install a kernel to try as `9gccmk`, not `9pc64.gccmk`.
+
+Not yet with gccmk: libc as a whole (libc's `9syscall` writes 6a assembly).

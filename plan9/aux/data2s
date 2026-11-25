@@ -1,0 +1,35 @@
+#!/bin/rc
+# aux/data2s name: 9front's aux/data2s for gccmk -- the standard input
+# as the data namecode (padded to 8 bytes) and its length namelen (a
+# long), in GAS for gcc-as (9front's writes 6a's DATA and GLOBL): the
+# kernel's $CONF.root.s (port/mkrootall), which ../port/mkrootc's
+# $CONF.rootc.c names
+. /$objtype/gnu/plan9/lib.rc
+~ $#* 1 || die usage: aux/data2s name
+echo $data2s
+echo '	.section .note.GNU-stack,"",%progbits'
+echo '	.data'
+echo '	.balign 8'
+echo '	.globl '$1'code'
+echo $1'code:'
+xd -1x | sed 's/^[0-9a-f]+ *//' | awk -v 'name='$1 '
+NF > 0 {
+	s = "\t.byte "
+	for(i = 1; i <= NF; i++)
+		s = s (i > 1 ? "," : "") "0x" $i
+	print s
+	n += NF
+}
+END {
+	if(n % 8){
+		s = "\t.byte 0"
+		for(m = n+1; m % 8; m++)
+			s = s ",0"
+		print s
+	}
+	print "\t.balign 4"
+	print "\t.globl " name "len"
+	print name "len:"
+	print "\t.long " n
+}'
+exit ''
