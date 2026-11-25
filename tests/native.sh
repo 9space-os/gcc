@@ -1,6 +1,6 @@
 #!/bin/bash
 # The native toolchain (out/$objtype, /$objtype/gnu) in the 9front guest
-# (the tree's scripts/guest/boot-cli.sh, PLAN9, default TREE of paths.env): compile and run tests/ape.c
+# (the tree's sys/src/build/host/guest/boot-cli.sh, PLAN9, default TREE of paths.env): compile and run tests/ape.c
 # (APE, the driver's defaults), tests/plan9.c (native Plan 9 C), and with
 # g++ tests/cxx.cc, tests/eh.cc and tests/cxxlib.cc (libstdc++,
 # exceptions, threads over APE's pthreads), and compare the
@@ -45,7 +45,7 @@ cmds=(
 	"g++ -O2 -o cxxlib /tests/cxxlib.cc && ./cxxlib; if(~ \$status '') echo cxxlib ok; if not echo cxxlib FAIL \$status"
 )
 cd "$PLAN9"
-MEM=${MEM:-1024} CMDWAIT=${CMDWAIT:-900} UFS_EXTRA=$E bash scripts/guest/boot-cli.sh "${cmds[@]}" > "$T/log" 2>&1 || true
+MEM=${MEM:-1024} CMDWAIT=${CMDWAIT:-900} UFS_EXTRA=$E bash sys/src/build/host/guest/boot-cli.sh "${cmds[@]}" > "$T/log" 2>&1 || true
 tr -d '\r' < "$T/log" > "${BUILD:-$TOP/build}/$objtype/native-test.log"
 grep -E '^(ape|plan9|samecode|cxx|eh|samecxx|cxxlib) (ok|FAIL)|^cxxlib: FAIL' "${BUILD:-$TOP/build}/$objtype/native-test.log" || true
 [ "$(grep -cE '^(ape|plan9|samecode|cxx|eh|samecxx|cxxlib) ok' "${BUILD:-$TOP/build}/$objtype/native-test.log")" = 7 ] ||

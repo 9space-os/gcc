@@ -1,6 +1,6 @@
 #!/bin/bash
 # gccmk (plan9/, build.sh plan9) in the 9front guest (the tree's
-# scripts/guest/boot-cli.sh, PLAN9, default TREE of paths.env): 9front's own mkfiles with the native gcc --
+# sys/src/build/host/guest/boot-cli.sh, PLAN9, default TREE of paths.env): 9front's own mkfiles with the native gcc --
 # a library (libbio: mksyslib, ar; its members replace the build's x.o),
 # a program with yacc (hoc: mkone) and an APE program (ape/cmd/expr:
 # pcc), each run, and the assembly of libc, libmp and libsec (gcc-as: the
@@ -65,7 +65,7 @@ if [ -z "$MPSEC" ]; then
 	for i in "${!cmds[@]}"; do case ${cmds[$i]} in *'echo mpsec ok'*) unset 'cmds[i]' ;; esac; done
 fi
 cd "$PLAN9"
-MEM=${MEM:-1024} CMDWAIT=${CMDWAIT:-600} UFS_EXTRA=$E bash scripts/guest/boot-cli.sh "${cmds[@]}" > "$T/log" 2>&1 || true
+MEM=${MEM:-1024} CMDWAIT=${CMDWAIT:-600} UFS_EXTRA=$E bash sys/src/build/host/guest/boot-cli.sh "${cmds[@]}" > "$T/log" 2>&1 || true
 tr -d '\r' < "$T/log" > "$TOP/build/$objtype/mk-test.log"
 re="^(${tests// /|})"
 grep -E "$re (ok|FAIL)|^differs" "$TOP/build/$objtype/mk-test.log" || true

@@ -5,8 +5,8 @@ GCC 16.2.0 and Binutils 2.47 for 9front amd64, 386, arm64 and riscv64 (targets
 built on Linux as a Canadian cross against the gcc-built 9front tree
 (`PLAN9`, default `TREE` of 9space's `dist/paths.env`; for riscv64 `TREE_RISCV`,
 the tree's branch `riscv`). The result, `out/$objtype`, is the tree
-`/$objtype/gnu` of an installed system; the tree's `scripts/guest/mkiso.sh`
-puts it on the install CD (`scripts/guest/boot/gnuproto`). In 9space,
+`/$objtype/gnu` of an installed system; the tree's `sys/src/build/host/guest/mkiso.sh`
+puts it on the install CD (`sys/src/build/host/guest/boot/gnuproto`). In 9space,
 `dist/bin/build-toolchains` runs the stages below for amd64, 386 and arm64
 (the wiki's Building page); riscv64 by hand, after building `tree-riscv`.
 

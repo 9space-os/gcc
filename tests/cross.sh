@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build tests/*.c, *.cc with the cross toolchain (build/$objtype/cross) and run
-# them in the 9front guest (the tree's scripts/guest/boot-cli.sh, PLAN9,
+# them in the 9front guest (the tree's sys/src/build/host/guest/boot-cli.sh, PLAN9,
 # default TREE of paths.env; the programs in /tests): APE and native Plan 9 C, C++ (exceptions), gcc's
 # APE (C99 math, stdio, time, wide characters, pthreads) and libstdc++
 # over it. Prints one line per
@@ -38,7 +38,7 @@ for p in $tests; do
 done
 re="^(${tests// /|}) "
 cd "$PLAN9"
-UFS_EXTRA=$T/extra bash "$PLAN9/scripts/guest/boot-cli.sh" "${cmds[@]}" > "$T/log" 2>&1 || true
+UFS_EXTRA=$T/extra bash "$PLAN9/sys/src/build/host/guest/boot-cli.sh" "${cmds[@]}" > "$T/log" 2>&1 || true
 tr -d '\r' < "$T/log" > "${BUILD:-$TOP/build}/$objtype/cross-test.log"
 # the failures the programs print, then the results
 grep -E "^(${tests// /|}): FAIL" "${BUILD:-$TOP/build}/$objtype/cross-test.log" || true
