@@ -497,3 +497,20 @@ Also open in the tree: pc64's conf lacks `acpisleep` and `cstate` (the
 hand-made `build.json` has them), and `acpisleep.c` needs its own name for
 apbootstrap (mk's `%.i` is not static). Next: libc's 9syscall stubs (tree side),
 and comparing the objects and symbols with the build's 9pc64.
+
+The tree's side landed (2026-11-25, main 558434da1 and 6adb7772a). On the X1
+(installed 9space, updated with these wrappers): `gccmk -k install` over all of
+`/sys/src` (LIBS, SUBSYS, CMDS, each cleaned first) ends without a failing
+directory; `gccmk 9pc64` in `/sys/src/9/pc64` builds a kernel (text 1.03 MB,
+the build tool's 1.17 MB, as that links every driver object; data 16.6 MB, as
+mk's bootfs takes the gccmk programs unstripped), and it boots on the X1 to the
+desktop and the MCP server (4 processors, AHCI disk and hjfs, i218 and the
+iwl WLAN with firmware, i915, synaptics; hoc built with gccmk runs). It
+needs the build tool on the machine (`build` for the klibs and elf2aout: not
+yet installed by the tree's build, so a cross-built copy was in the path).
+Two traps: gccmk's output in `out/` is made only by `build.sh plan9` (the
+tree's stage-dist.sh now redoes it when `plan9/` is newer), and
+`/amd64/gnu/bin` must come after `/bin` (GNU's cpp hides 9front's, aux/na's
+`cpp -+` fails and leaves an empty `sd53c8xx.i`). libc built because generated
+`9syscall/*.S` were still there from an earlier build: from a clean tree the
+stubs are still missing.
