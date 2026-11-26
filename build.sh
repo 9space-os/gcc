@@ -228,6 +228,15 @@ write(d, lists)
 # tool's C flags for a kernel (-std=c11 and the manifest's), the
 # assembler's subset of them, the link's Oflags and Libs (klib*.a)
 k9 = os.path.join(root, 'sys/src/9')
+def merged(e, key):
+	"""an entry's key with its Include files' after it, as build.exe merges
+	them (/$ARCH/kernel.$CC.json, sys/src/9/$CC.json: gcc's)"""
+	out = list(e.get(key, []))
+	for inc in e.get('Include', []):
+		f = os.path.join(root, inc.replace('$ARCH', objtype).replace('$CC', 'gcc').lstrip('/'))
+		for i in json.load(open(f)):
+			out += merged(i, key)
+	return out
 for kd in sorted(os.listdir(k9)):
 	m = os.path.join(k9, kd, 'build.json')
 	if not os.path.isfile(m):
@@ -236,11 +245,11 @@ for kd in sorted(os.listdir(k9)):
 		if 'Kernel' not in e or not e.get('Install', '').startswith('/' + objtype + '/'):
 			continue
 		conf = os.path.basename(e['Kernel']['ConfFile'])
-		kc = ['-std=c11'] + [f.replace('/$ARCH', '/' + objtype) for f in e.get('Cflags', [])]
+		kc = ['-std=c11'] + [f.replace('/$ARCH', '/' + objtype) for f in merged(e, 'Cflags')]
 		write(os.path.join(d, 'kernel', conf), {
 			'cflags': kc,
 			'asflags': [f for f in kc if f.startswith(('-m', '-fzero', '-fcommon')) or f == '-fno-pie'],
-			'ldflags': e.get('Oflags', []),
+			'ldflags': merged(e, 'Oflags'),
 			'libs': [f.replace('/$ARCH', '/' + objtype) for f in e.get('Libs', [])],
 		})
 PY
