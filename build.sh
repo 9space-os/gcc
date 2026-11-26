@@ -234,10 +234,10 @@ write(d, lists)
 k9 = os.path.join(root, 'sys/src/9')
 def merged(e, key):
 	"""an entry's key with its Include files' after it, as build.exe merges
-	them (/$ARCH/kernel.$CC.json, sys/src/9/$CC.json: gcc's)"""
+	them (/$ARCH/kernel.$TOOLSET.json, sys/src/9/$TOOLSET.json: gcc's)"""
 	out = list(e.get(key, []))
 	for inc in e.get('Include', []):
-		f = os.path.join(root, inc.replace('$ARCH', objtype).replace('$CC', 'gcc').lstrip('/'))
+		f = os.path.join(root, inc.replace('$ARCH', objtype).replace('$TOOLSET', 'gcc').lstrip('/'))
 		for i in json.load(open(f)):
 			out += merged(i, key)
 	return out
