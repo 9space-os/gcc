@@ -15,6 +15,7 @@ OUT=${1:?usage: sysroot.sh dir}
 for f in $objtype/include sys/include $objtype/lib.gcc/ape/libap.a $objtype/lib.gcc/libc.a $objtype/plan9.ld; do
 	[ -e "$PLAN9/$f" ] || { echo "sysroot: no $PLAN9/$f (build the tree first)" >&2; exit 1; }
 done
+"$TOP/scripts/tree-current.sh" "$PLAN9" $objtype
 rm -rf "$OUT"
 mkdir -p "$OUT/$objtype" "$OUT/sys"
 ln -s "$PLAN9/$objtype/include" "$OUT/$objtype/include"
