@@ -196,14 +196,18 @@ plan9(){
 	python3 - "$PLAN9" "$objtype" "$d" <<'PY'
 import json, os, sys
 root, objtype, d = sys.argv[1:]
+def expand(f):
+	"""a manifest's path as build.exe expands it for gcc: $ARCH, $CCRT (gcc's
+	runtime, libgcc.a)"""
+	return f.replace('/$ARCH', '/' + objtype).replace('$CCRT', 'libgcc.a')
 def flags(name, key):
 	out = []
 	for e in json.load(open(os.path.join(root, objtype, name))):
 		out += e.get(key, [])
-	return [f.replace('/$ARCH', '/' + objtype) for f in out]
+	return [expand(f) for f in out]
 def libs(manifest):
 	e = json.load(open(os.path.join(root, manifest)))[0]
-	return [f.replace('/$ARCH', '/' + objtype) for f in e['Libs'] if not f.startswith('--')]
+	return [expand(f) for f in e['Libs'] if not f.startswith('--')]
 cflags = flags('cflags.json', 'Cflags') + flags('gcc.json', 'Cflags')
 # the build tool's assembler flags: the C flags for the machine
 asflags = [f for f in cflags if f.startswith(('-m', '-fzero', '-fcommon')) or f == '-fno-pie']
@@ -245,12 +249,12 @@ for kd in sorted(os.listdir(k9)):
 		if 'Kernel' not in e or not e.get('Install', '').startswith('/' + objtype + '/'):
 			continue
 		conf = os.path.basename(e['Kernel']['ConfFile'])
-		kc = ['-std=c11'] + [f.replace('/$ARCH', '/' + objtype) for f in merged(e, 'Cflags')]
+		kc = ['-std=c11'] + [expand(f) for f in merged(e, 'Cflags')]
 		write(os.path.join(d, 'kernel', conf), {
 			'cflags': kc,
 			'asflags': [f for f in kc if f.startswith(('-m', '-fzero', '-fcommon')) or f == '-fno-pie'],
 			'ldflags': merged(e, 'Oflags'),
-			'libs': [f.replace('/$ARCH', '/' + objtype) for f in e.get('Libs', [])],
+			'libs': [expand(f) for f in e.get('Libs', [])],
 		})
 PY
 }
