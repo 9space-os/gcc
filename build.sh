@@ -144,6 +144,9 @@ hostlibs(){
 OUT=${OUTDIR:-$TOP/out}/$objtype
 native(){
 	local host=(--build=$(cc -dumpmachine) --host=$TARGET --prefix=/$objtype/gnu)
+	# the tree's APE archive from its headers as they are (else the programs
+	# break: a struct of the headers, another of libap.a)
+	"$TOP/scripts/tree-current.sh" "$PLAN9" $objtype
 	log "native binutils"
 	conf native-binutils "$SRC/binutils" "${host[@]}" "${BINUTILS_CONF[@]}"
 	mk native-binutils all all
